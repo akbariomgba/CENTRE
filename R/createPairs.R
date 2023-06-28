@@ -1,12 +1,11 @@
 #' Create Pairs
 #'
 #' Creates all of the possible gene enhancer pairs at 500kb distance
-#' from the given genes
-#' transcription start sites.
+#' from the given genes transcription start sites.
 #'
-#' @param gene One column dataframe with gene ENSEMBL id's
-#' @return dataframe with two columns the ENSEMBL id's without their version and
-#' the enhancer id's
+#' @param gene One column dataframe with gene ENSEMBL IDs
+#' @return dataframe with two columns the ENSEMBL IDs without their version and
+#' the enhancer IDs
 #'
 #'
 #' @examples
@@ -23,11 +22,11 @@
 createPairs <- function(gene) {
   start_time <- Sys.time()
 
-  colnames(gene) <- c("gene_id")
-
+  colnames(gene) <- c("gene_id") #could be deleted or just fix it
+  #remove the ID version (number after .)	
   gene$gene_id1 <- gsub("\\..*", "", gene$gene_id)
 
-
+ # Connect to the annotation.db using RSQLite interface
   conn <- RSQLite::dbConnect(RSQLite::SQLite(),
                              system.file("extdata",
                             "Annotation.db",
@@ -37,10 +36,13 @@ createPairs <- function(gene) {
   paste0(sprintf("'%s'", gene$gene_id1), collapse = ", "),")",sep="" )
   gene <- RSQLite::dbGetQuery(conn, query)
   #Select all of the annotation for ccres
-  ccres_enhancer <- RSQLite::dbGetQuery(conn, "SELECT * FROM ccres_enhancer")
-  RSQLite::dbDisconnect(conn)
+  ccresEnhancer <- RSQLite::dbGetQuery(conn, "SELECT * FROM ccres_enhancer")
+  RSQLite::dbDisconnect(conn) #disconnect the SQL database
+	
   gene$startTts <- integer(nrow(gene))
   gene$endTts <- integer(nrow(gene))
+
+  #transfrom into granges		
   for (i in seq_len(nrow(gene)))
  {
     ##extend 500 kb to the left of tts
